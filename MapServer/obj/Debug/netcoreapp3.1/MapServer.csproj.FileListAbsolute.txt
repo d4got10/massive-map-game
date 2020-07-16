@@ -1,0 +1,12 @@
+C:\Users\Danil\source\repos\MapServer\bin\Debug\netcoreapp3.1\MapServer.exe
+C:\Users\Danil\source\repos\MapServer\bin\Debug\netcoreapp3.1\MapServer.deps.json
+C:\Users\Danil\source\repos\MapServer\bin\Debug\netcoreapp3.1\MapServer.runtimeconfig.json
+C:\Users\Danil\source\repos\MapServer\bin\Debug\netcoreapp3.1\MapServer.runtimeconfig.dev.json
+C:\Users\Danil\source\repos\MapServer\bin\Debug\netcoreapp3.1\MapServer.dll
+C:\Users\Danil\source\repos\MapServer\bin\Debug\netcoreapp3.1\MapServer.pdb
+C:\Users\Danil\source\repos\MapServer\obj\Debug\netcoreapp3.1\MapServer.csprojAssemblyReference.cache
+C:\Users\Danil\source\repos\MapServer\obj\Debug\netcoreapp3.1\MapServer.AssemblyInfoInputs.cache
+C:\Users\Danil\source\repos\MapServer\obj\Debug\netcoreapp3.1\MapServer.AssemblyInfo.cs
+C:\Users\Danil\source\repos\MapServer\obj\Debug\netcoreapp3.1\MapServer.dll
+C:\Users\Danil\source\repos\MapServer\obj\Debug\netcoreapp3.1\MapServer.pdb
+C:\Users\Danil\source\repos\MapServer\obj\Debug\netcoreapp3.1\MapServer.genruntimeconfig.cache
