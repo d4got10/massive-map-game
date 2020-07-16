@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Danil\\source\\repos\\MapServer\\MapServer.csproj",
+      "projectUniqueName": "C:\\Users\\Danil\\Desktop\\Unity Projects\\MapGame\\massive-map-game\\MapServer\\MapServer.csproj",
       "projectName": "MapServer",
-      "projectPath": "C:\\Users\\Danil\\source\\repos\\MapServer\\MapServer.csproj",
+      "projectPath": "C:\\Users\\Danil\\Desktop\\Unity Projects\\MapGame\\massive-map-game\\MapServer\\MapServer.csproj",
       "packagesPath": "C:\\Users\\Danil\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Danil\\source\\repos\\MapServer\\obj\\",
+      "outputPath": "C:\\Users\\Danil\\Desktop\\Unity Projects\\MapGame\\massive-map-game\\MapServer\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Danil\\AppData\\Roaming\\NuGet\\NuGet.Config",

@@ -30,7 +30,7 @@ public class GameGrid : MonoBehaviour
 
     public bool Move(IGridCell caller, Vector2 position, Vector2 direction)
     {
-        if(Grid.ContainsKey(position + direction) && Grid[position+direction] == null)
+        if(Grid.ContainsKey(position + direction) && Grid[position + direction] == null)
         {
             Grid[position + direction] = caller;
             Grid[position] = null;

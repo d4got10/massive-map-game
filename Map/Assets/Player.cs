@@ -7,6 +7,7 @@ public class Player : MonoBehaviour, IGridCell
     public int ActionPoints { get; private set; }
 
     private GameGrid _gameGrid;
+    private Client _client;
 
     private void Awake()
     {
@@ -16,11 +17,28 @@ public class Player : MonoBehaviour, IGridCell
     private void Start()
     {
         _gameGrid.AddPlayer(this, transform.position);
+
+        _client = new Client("127.0.0.1", 904, this);
+        _client.OnDataChanged += ChangePosition;
+        _client.Connect();
+    }
+
+    private void OnDestroy()
+    {
+        _client.SendPacket(Client.PacketInfo.Disconnect, null);
+        _client.OnDataChanged -= ChangePosition;
+    }
+
+    public void ChangePosition(Client.Data data)
+    {
+        transform.position = new Vector3(data.X, data.Y);
     }
 
     private void Update()
     {
         Move();
+        if (Input.GetKeyDown(KeyCode.T))
+            Debug.Log(_client.ID);
     }
 
     private void Move()
@@ -47,12 +65,8 @@ public class Player : MonoBehaviour, IGridCell
 
         if (_gameGrid.Move(this, transform.position, moveDirection))
         {
-            var eventArgs = new Client.EventArgs();
-            eventArgs.EventType = Client.EventArgs.EventTypes.Move;
-            eventArgs.EventData = moveDirection;
 
-            Client.SendEvent(eventArgs);
-
+            _client.SendPacket(Client.PacketInfo.Move, moveDirection);
             transform.position += (Vector3)moveDirection;
         }
     }
