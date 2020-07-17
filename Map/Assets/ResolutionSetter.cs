@@ -6,6 +6,6 @@ public class ResolutionSetter : MonoBehaviour
 {
     private void Start()
     {
-        Screen.SetResolution(640, 480, false);
+        Screen.SetResolution(600, 600, false);
     }
 }

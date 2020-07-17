@@ -31,6 +31,7 @@ public class PlayerSpawner : MonoBehaviour
             {
                 other.X = x;
                 other.Y = y;
+                other.PositionUpdate = true;
                 return;
             }
         }
@@ -48,9 +49,16 @@ public class PlayerSpawner : MonoBehaviour
         {
             var obj = Instantiate(_prefab, new Vector2(other.X, other.Y), Quaternion.identity, transform);
             var otherPlayer = obj.GetComponent<OtherPlayer>();
+
             otherPlayer.ID = other.ID;
             otherPlayer.X = other.X;
             otherPlayer.Y = other.Y;
+            otherPlayer.Name = other.Name;
+            otherPlayer.Color = new Color(other.Color.Item1/256f, other.Color.Item2/256f, other.Color.Item3/256f);
+
+            otherPlayer.PositionUpdate = true;
+            otherPlayer.Setup = true;
+
             Others.Add(otherPlayer);
         }
         OthersToSpawn = new List<Client.PlayerData>();

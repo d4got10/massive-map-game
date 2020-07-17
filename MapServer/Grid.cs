@@ -31,6 +31,22 @@ namespace MapServer
                 return false;
             }
 
+            public void AddPlayer(Player player)
+            {
+                Data[(player.X, player.Y)] = CellContentType.Player;
+            }
+
+            public void RemovePlayer(Player player)
+            {
+                Data[(player.X, player.Y)] = CellContentType.Empty;
+            }
+
+            public void PlayerMoved((int,int) position, (int,int) direction)
+            {
+                Data[position] = CellContentType.Empty;
+                Data[(position.Item1 + direction.Item1, position.Item2 + direction.Item2)] = CellContentType.Player;
+            }
+
             public (int, int) GetEmptyCell()
             {
                 int x = 0;

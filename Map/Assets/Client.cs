@@ -20,34 +20,32 @@ public class Client : IDisposable
     private static PlayerData _self;
     public static List<PlayerData> Others;
     
-    private static MemoryStream _memoryStream = new MemoryStream(new byte[128], 0, 128, true, true);
+    private static MemoryStream _memoryStream = new MemoryStream(new byte[1024], 0, 1024, true, true);
     private static BinaryWriter _writer = new BinaryWriter(_memoryStream);
     private static BinaryReader _reader = new BinaryReader(_memoryStream);
 
     public int ID => _self.ID;
-    public Action<PlayerData> OnDataChanged;
+    public Action<PlayerData> OnPositionChanged;
+    public Action<PlayerData> OnSelfReceived;
 
     public class PlayerData
     {
         public int X;
         public int Y;
         public int ID;
+        public string Name;
+        public (int,int,int) Color;
 
         public PlayerData()
         {
         }
 
-        public PlayerData(PlayerData data)
-        {
-            X = data.X;
-            Y = data.Y;
-            ID = data.ID;
-        }
-
-        public PlayerData(int x, int y, int id)
+        public PlayerData(int x, int y, string name, (int,int,int) color, int id)
         {
             X = x;
             Y = y;
+            Name = name;
+            Color = color;
             ID = id;
         }
     }
@@ -61,12 +59,20 @@ public class Client : IDisposable
 
         _self.X = Mathf.RoundToInt(player.transform.position.x);
         _self.Y = Mathf.RoundToInt(player.transform.position.y);
+
+        if (PlayerPrefs.HasKey("ID"))
+            _self.ID = PlayerPrefs.GetInt("ID");
+        else
+            _self.ID = 0;
+
+        _self.Name = player.Name;
+        _self.Color = (Mathf.RoundToInt(player.Color.r * 256), Mathf.RoundToInt(player.Color.g * 256), Mathf.RoundToInt(player.Color.b * 256));
     }
 
     public void Connect()
     {
         _socket.Connect(_ip, _port);
-        SendPacket(PacketInfo.ID, null);
+        SendPacket(PacketInfo.ID, _self);
         BeginReceiving();
     }
 
@@ -80,6 +86,12 @@ public class Client : IDisposable
         {
             case PacketInfo.ID:
                 _writer.Write(0);
+                _writer.Write(_self.ID);
+                _writer.Write(_self.Name);
+                _writer.Write(_self.Color.Item1);
+                _writer.Write(_self.Color.Item2);
+                _writer.Write(_self.Color.Item3);      
+
                 _socket.Send(_memoryStream.GetBuffer());
                 break;
             case PacketInfo.Move:
@@ -103,7 +115,7 @@ public class Client : IDisposable
     {
         while (_socket.Connected)
         {
-            _socket.BeginReceive(_memoryStream.GetBuffer(), 0, 128, SocketFlags.None, ReceivePacket, null);
+            _socket.BeginReceive(_memoryStream.GetBuffer(), 0, 1024, SocketFlags.None, ReceivePacket, null);
             await Task.Yield();
         }
     }
@@ -120,39 +132,79 @@ public class Client : IDisposable
 
         switch (code)
         {
-            case 0: 
-                _self.ID = _reader.ReadInt32();
-                _self.X = _reader.ReadInt32();
-                _self.Y = _reader.ReadInt32();
-
-                int playerCount = _reader.ReadInt32();
-                Others = new List<PlayerData>();
-                for(int i = 0; i < playerCount; i++)
-                {
-                    var other = new PlayerData();
-                    other.ID = _reader.ReadInt32();
-                    other.X = _reader.ReadInt32();
-                    other.Y = _reader.ReadInt32();
-                    Others.Add(other);
-                }
-
-                OnGetOtherCharacters?.Invoke(Others);
-                OnDataChanged?.Invoke(new PlayerData(_self));
+            case 0:
+                _self.ID = _reader.ReadInt32();      
+                ReceiveSelf();
+                ReceiveOtherPlayers();
                 break;
             case 1:
                 int id = _reader.ReadInt32();
                 if (_self.ID == id)
-                {
-                    _self.X = _reader.ReadInt32();
-                    _self.Y = _reader.ReadInt32();
-                    OnDataChanged?.Invoke(new PlayerData(_self));
-                }
+                    ReceivePosition();
                 else
-                {
                     OnOtherPlayerMoved?.Invoke(id, _reader.ReadInt32(), _reader.ReadInt32());
-                }
+                break;
+            case 2:
+                break;
+            case 3:
+                OtherPlayerConnected();
                 break;
         }
+    }
+
+    private void ReceiveSelf()
+    {
+        _self.X = _reader.ReadInt32();
+        _self.Y = _reader.ReadInt32();
+
+        _self.Name = _reader.ReadString();
+
+        _self.Color.Item1 = _reader.ReadInt32();
+        _self.Color.Item2 = _reader.ReadInt32();
+        _self.Color.Item3 = _reader.ReadInt32();
+
+        OnPositionChanged?.Invoke(_self);
+        OnSelfReceived?.Invoke(_self);
+    }
+
+    private void ReceivePosition()
+    {
+        _self.X = _reader.ReadInt32();
+        _self.Y = _reader.ReadInt32();
+        OnPositionChanged?.Invoke(_self);
+    }
+
+    private void ReceiveOtherPlayers()
+    {
+        int playerCount = _reader.ReadInt32();
+        Others = new List<PlayerData>();
+        for (int i = 0; i < playerCount; i++)
+        {
+            var other = new PlayerData();
+            other.ID = _reader.ReadInt32();
+            other.X = _reader.ReadInt32();
+            other.Y = _reader.ReadInt32();
+
+            other.Name = _reader.ReadString();
+
+            other.Color.Item1 = _reader.ReadInt32();
+            other.Color.Item2 = _reader.ReadInt32();
+            other.Color.Item3 = _reader.ReadInt32();
+            Others.Add(other);
+        }
+
+        OnGetOtherCharacters?.Invoke(Others);
+    }
+
+    private void OtherPlayerConnected()
+    {
+        var others = new List<PlayerData>();
+        var otherPlayer = new PlayerData();
+        otherPlayer.ID = _reader.ReadInt32();
+        otherPlayer.X = _reader.ReadInt32();
+        otherPlayer.Y = _reader.ReadInt32();
+        others.Add(otherPlayer);
+        OnGetOtherCharacters?.Invoke(others);
     }
 
     public void Dispose()
@@ -164,6 +216,7 @@ public class Client : IDisposable
     {
         ID,
         Move,
-        Disconnect
+        Disconnect,
+        OtherPlayerConnect
     }
 }

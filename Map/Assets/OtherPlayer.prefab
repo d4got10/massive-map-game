@@ -380,9 +380,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9eda26458a510349bbe76070daec7a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _renderer: {fileID: 3451979082092634651}
+  _text: {fileID: 8141707036073428395}
   ID: 0
   X: 0
   Y: 0
+  Name: 
+  Color: {r: 0, g: 0, b: 0, a: 0}
+  PositionUpdate: 0
+  Setup: 0
 --- !u!1 &5756937366564230981
 GameObject:
   m_ObjectHideFlags: 0
