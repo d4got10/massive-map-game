@@ -67,6 +67,18 @@ namespace MapServer
                         writer.Write(id);
                         writer.Write(pos.Item1);
                         writer.Write(pos.Item2);
+
+                        writer.Write(players.Count - 1);
+                        foreach(var other in players)
+                        {
+                            if(other != handlePlayer)
+                            {
+                                writer.Write(other.ID);
+                                writer.Write(other.X);
+                                writer.Write(other.Y);
+                            }
+                        }
+
                         client.Send(ms.GetBuffer());
                     break;
                     case 1:
@@ -86,6 +98,10 @@ namespace MapServer
                                 player.X = position.Item1;
                                 player.Y = position.Item2;
 
+                                ms.Position = 0;
+
+                                writer.Write(1);
+                                writer.Write(player.ID);
                                 writer.Write(player.X);
                                 writer.Write(player.Y);
 
@@ -96,6 +112,10 @@ namespace MapServer
                                     if(pl.Socket != null)
                                     pl.Socket.Send(ms.GetBuffer());
                                 }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Комадна не выполнена");
                             }
                         }
                         else

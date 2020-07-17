@@ -33,8 +33,8 @@ namespace MapServer
 
             public (int, int) GetEmptyCell()
             {
-                int x = 2;
-                int y = 2;
+                int x = 0;
+                int y = 0;
 
                 while (!(PlayerCanMove((x, y))))
                 {

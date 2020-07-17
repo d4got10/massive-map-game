@@ -7,32 +7,44 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Jobs;
 
-public class Client
+public class Client : IDisposable
 {
+    public static Action<List<PlayerData>> OnGetOtherCharacters;
+    public static Action<int, int, int> OnOtherPlayerMoved;
+
     private static Socket _socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
     private static string _ip;
     private static int _port;
-    private static Data _data;
+    private static PlayerData _self;
+    public static List<PlayerData> Others;
     
     private static MemoryStream _memoryStream = new MemoryStream(new byte[128], 0, 128, true, true);
     private static BinaryWriter _writer = new BinaryWriter(_memoryStream);
     private static BinaryReader _reader = new BinaryReader(_memoryStream);
 
-    public int ID => _data.ID;
-    public Action<Data> OnDataChanged;
+    public int ID => _self.ID;
+    public Action<PlayerData> OnDataChanged;
 
-    public class Data
+    public class PlayerData
     {
         public int X;
         public int Y;
         public int ID;
 
-        public Data()
+        public PlayerData()
         {
         }
 
-        public Data(int x, int y, int id)
+        public PlayerData(PlayerData data)
+        {
+            X = data.X;
+            Y = data.Y;
+            ID = data.ID;
+        }
+
+        public PlayerData(int x, int y, int id)
         {
             X = x;
             Y = y;
@@ -45,19 +57,17 @@ public class Client
         _ip = ip;
         _port = port;
 
-        _data = new Data();
+        _self = new PlayerData();
 
-        _data.X = Mathf.RoundToInt(player.transform.position.x);
-        _data.Y = Mathf.RoundToInt(player.transform.position.y);
+        _self.X = Mathf.RoundToInt(player.transform.position.x);
+        _self.Y = Mathf.RoundToInt(player.transform.position.y);
     }
 
     public void Connect()
     {
         _socket.Connect(_ip, _port);
         SendPacket(PacketInfo.ID, null);
-        ReceivePacket();
-
-        Task.Run(() => { while (true) ReceivePacket(); });
+        BeginReceiving();
     }
 
     public void SendPacket(PacketInfo info, object data)
@@ -74,7 +84,7 @@ public class Client
                 break;
             case PacketInfo.Move:
                 _writer.Write(1);
-                _writer.Write(_data.ID);
+                _writer.Write(_self.ID);
 
                 var move = (Vector2)data;
                 _writer.Write(Mathf.RoundToInt(move.x));
@@ -83,16 +93,25 @@ public class Client
                 break;
             case PacketInfo.Disconnect:
                 _writer.Write(2);
-                _writer.Write(_data.ID);
+                _writer.Write(_self.ID);
                 _socket.Send(_memoryStream.GetBuffer());
                 break;
         }       
     }
 
-    public void ReceivePacket()
+    public async void BeginReceiving()
+    {
+        while (_socket.Connected)
+        {
+            _socket.BeginReceive(_memoryStream.GetBuffer(), 0, 128, SocketFlags.None, ReceivePacket, null);
+            await Task.Yield();
+        }
+    }
+
+    public void ReceivePacket(IAsyncResult ar)
     {
         _memoryStream.Position = 0;
-        int count = _socket.Receive(_memoryStream.GetBuffer());
+        int count = _socket.EndReceive(ar);
 
         Debug.Log($"Code:{_reader.ReadInt32()} ID:{_reader.ReadInt32()}  X:{_reader.ReadInt32()}  Y:{_reader.ReadInt32()}");
         _memoryStream.Position = 0;
@@ -102,20 +121,43 @@ public class Client
         switch (code)
         {
             case 0: 
-                _data.ID = _reader.ReadInt32();
-                _data.X = _reader.ReadInt32();
-                _data.Y = _reader.ReadInt32();
-                OnDataChanged?.Invoke(_data);
-                break;
-            case 1: 
-                if(_data.ID == _reader.ReadInt32())
+                _self.ID = _reader.ReadInt32();
+                _self.X = _reader.ReadInt32();
+                _self.Y = _reader.ReadInt32();
+
+                int playerCount = _reader.ReadInt32();
+                Others = new List<PlayerData>();
+                for(int i = 0; i < playerCount; i++)
                 {
-                    _data.X = _reader.ReadInt32();
-                    _data.Y = _reader.ReadInt32();
-                    OnDataChanged?.Invoke(_data);
+                    var other = new PlayerData();
+                    other.ID = _reader.ReadInt32();
+                    other.X = _reader.ReadInt32();
+                    other.Y = _reader.ReadInt32();
+                    Others.Add(other);
+                }
+
+                OnGetOtherCharacters?.Invoke(Others);
+                OnDataChanged?.Invoke(new PlayerData(_self));
+                break;
+            case 1:
+                int id = _reader.ReadInt32();
+                if (_self.ID == id)
+                {
+                    _self.X = _reader.ReadInt32();
+                    _self.Y = _reader.ReadInt32();
+                    OnDataChanged?.Invoke(new PlayerData(_self));
+                }
+                else
+                {
+                    OnOtherPlayerMoved?.Invoke(id, _reader.ReadInt32(), _reader.ReadInt32());
                 }
                 break;
         }
+    }
+
+    public void Dispose()
+    {
+        _socket.Disconnect(false);
     }
 
     public enum PacketInfo
