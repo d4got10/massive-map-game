@@ -13,6 +13,7 @@ public class Client : IDisposable
 {
     public static Action<List<PlayerData>> OnGetOtherCharacters;
     public static Action<int, int, int> OnOtherPlayerMoved;
+    public static Action OnDisconnect;
 
     private static Socket _socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
     private static string _ip;
@@ -79,8 +80,10 @@ public class Client : IDisposable
     public void SendPacket(PacketInfo info, object data)
     {
         _memoryStream.Position = 0;
-        if(!_socket.Connected)
-            _socket.Connect(_ip, _port);
+        if (!_socket.Connected)
+        {
+            Connect();
+        }
 
         switch (info)
         {
@@ -123,8 +126,15 @@ public class Client : IDisposable
     public void ReceivePacket(IAsyncResult ar)
     {
         _memoryStream.Position = 0;
-        int count = _socket.EndReceive(ar);
-
+        try
+        {
+            _socket.EndReceive(ar);
+        }
+        catch(SocketException e)
+        {
+            Debug.LogError(e.Message);
+            Connect();
+        }
         Debug.Log($"Code:{_reader.ReadInt32()} ID:{_reader.ReadInt32()}  X:{_reader.ReadInt32()}  Y:{_reader.ReadInt32()}");
         _memoryStream.Position = 0;
 
@@ -149,7 +159,15 @@ public class Client : IDisposable
             case 3:
                 OtherPlayerConnected();
                 break;
+            case 4:
+                Disconnect();
+                break;
         }
+    }
+
+    private void Disconnect()
+    {
+        OnDisconnect?.Invoke();
     }
 
     private void ReceiveSelf()
@@ -203,6 +221,10 @@ public class Client : IDisposable
         otherPlayer.ID = _reader.ReadInt32();
         otherPlayer.X = _reader.ReadInt32();
         otherPlayer.Y = _reader.ReadInt32();
+        otherPlayer.Name = _reader.ReadString();
+        otherPlayer.Color.Item1 = _reader.ReadInt32();
+        otherPlayer.Color.Item2 = _reader.ReadInt32();
+        otherPlayer.Color.Item3 = _reader.ReadInt32();
         others.Add(otherPlayer);
         OnGetOtherCharacters?.Invoke(others);
     }

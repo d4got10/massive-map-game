@@ -15,8 +15,10 @@ public class CharacterCustomizer : MonoBehaviour
 
     private void Awake()
     {
-        if (PlayerPrefs.HasKey("CharacterCreated"))
+        if (PlayerPrefs.HasKey("Connected"))
         {
+            _player.Color = new Color(PlayerPrefs.GetFloat("R"), PlayerPrefs.GetFloat("G"), PlayerPrefs.GetFloat("B"));
+            _player.Name = PlayerPrefs.GetString("Name");
             Destroy(gameObject);
         }
     }
@@ -35,7 +37,13 @@ public class CharacterCustomizer : MonoBehaviour
             b = Mathf.Clamp(Convert.ToInt32(_bField.text), 0, 256);
         _player.Color = new Color(r/256f, g/256f, b/256f);
 
+        PlayerPrefs.SetFloat("R", r / 256f);
+        PlayerPrefs.SetFloat("G", g / 256f);
+        PlayerPrefs.SetFloat("B", b / 256f);
+
         _player.Name = _nameField.text;
+
+        PlayerPrefs.SetString("Name", _player.Name);
 
         PlayerPrefs.SetInt("CharacterCreated", 1);
 

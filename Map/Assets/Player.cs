@@ -30,6 +30,7 @@ public class Player : MonoBehaviour, IGridCell
         _client.OnPositionChanged += ChangePosition;
         _client.OnSelfReceived += SetupPlayer;
         _client.Connect();
+        PlayerPrefs.SetInt("Connected", 1);
     }
 
     private void OnDestroy()

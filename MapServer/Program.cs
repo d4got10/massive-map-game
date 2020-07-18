@@ -62,9 +62,23 @@ namespace MapServer
                 try
                 {
                     client.Receive(ms.GetBuffer());
+                    if (!client.Connected)
+                    {
+                        ms.Position = 0;
+                        var disPlayer = players.Find(t => t.Socket == client);
+                        if (disPlayer != null)
+                        {
+                            Console.WriteLine($"Пользователь {disPlayer.ID} потерял соединение");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Пользователь UNKWN потерял соединение");
+                        }
+                    }
                 }
-                catch
+                catch(SocketException e)
                 {
+                    Console.WriteLine(e.Message);
                     client.Shutdown(SocketShutdown.Both);
                     client.Disconnect(false);
                     return;
@@ -95,7 +109,7 @@ namespace MapServer
                             }
                             else
                             {
-                                Console.WriteLine($"Новое подключение от пользователя {handlePlayer.ID}");
+                                //Console.WriteLine($"Новое подключение от пользователя {handlePlayer.ID}");
                                 handlePlayer.Socket = client;
                                 newPlayer = false;
                             }
@@ -107,8 +121,8 @@ namespace MapServer
                         Console.WriteLine($"Спавн на точке ({pos.Item1},{pos.Item2})");
 
                         writer.Write(handlePlayer.ID);
-                        writer.Write(pos.Item1);
-                        writer.Write(pos.Item2);
+                        writer.Write(handlePlayer.X);
+                        writer.Write(handlePlayer.Y);
                         writer.Write(handlePlayer.Name);
                         writer.Write(handlePlayer.Color.Item1);
                         writer.Write(handlePlayer.Color.Item2);
@@ -193,19 +207,28 @@ namespace MapServer
                         else
                         {
                             Console.WriteLine($"Player with ID {id} doesn't exit but tries to move.");
+                            ms.Position = 0;
+                            writer.Write(4);
+                            client.Send(ms.GetBuffer());
+                            //client.Shutdown(SocketShutdown.Both);
+                            //client.Disconnect(false);
                         }    
                     break;
                     case 2:
                         id = reader.ReadInt32();
                         //player = players.Find(t => t.ID == id);
+                        ms.Position = 0;
+                        writer.Write(4);
+                        client.Send(ms.GetBuffer());
                         client.Shutdown(SocketShutdown.Both);
-                        
                         client.Disconnect(false);
                         Console.WriteLine($"Пользователь {id} отключился");
                         //players.Remove(player);
                         //grid.RemovePlayer(player);
                     break;
                     case 3:
+                    break;
+                    case 4:
                     break;
                 }
             }
