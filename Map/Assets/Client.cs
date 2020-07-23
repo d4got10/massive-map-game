@@ -11,9 +11,10 @@ using UnityEngine.Jobs;
 
 public class Client : IDisposable
 {
-    public static Action<List<PlayerData>> OnGetOtherCharacters;
+    public static Action<PlayerData> OnGetOtherCharacter;
     public static Action<int, int, int> OnOtherPlayerMoved;
     public static Action OnDisconnect;
+    public static Action OnConnect;
 
     private static Socket _socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
     private static string _ip;
@@ -26,6 +27,7 @@ public class Client : IDisposable
     private static BinaryReader _reader = new BinaryReader(_memoryStream);
 
     public int ID => _self.ID;
+    public bool IsConnected { get; private set; } = false;
     public Action<PlayerData> OnPositionChanged;
     public Action<PlayerData> OnSelfReceived;
 
@@ -53,6 +55,8 @@ public class Client : IDisposable
 
     public Client(string ip, int port, Player player)
     {
+        IsConnected = false;
+
         _ip = ip;
         _port = port;
 
@@ -79,6 +83,8 @@ public class Client : IDisposable
 
     public void SendPacket(PacketInfo info, object data)
     {
+        if (!IsConnected && info != PacketInfo.ID) return;
+
         _memoryStream.Position = 0;
         if (!_socket.Connected)
         {
@@ -132,10 +138,14 @@ public class Client : IDisposable
         }
         catch(SocketException e)
         {
-            Debug.LogError(e.Message);
+            Debug.LogWarning(e.Message);
             Connect();
         }
-        Debug.Log($"Code:{_reader.ReadInt32()} ID:{_reader.ReadInt32()}  X:{_reader.ReadInt32()}  Y:{_reader.ReadInt32()}");
+        //Debug.Log($"{_reader.ReadInt32()}|{_reader.ReadInt32()}|{_reader.ReadInt32()}|{_reader.ReadInt32()}|{_reader.ReadString()}|{_reader.ReadInt32()}|{_reader.ReadInt32()}|{_reader.ReadInt32()}");
+        //_memoryStream.Position = 0;
+
+        Debug.Log($"Code:{_reader.ReadInt32()} ID:{_reader.ReadInt32()}  X:{_reader.ReadInt32()}  Y:{_reader.ReadInt32()} Name:{_reader.ReadString()} " +
+                  $"Color:{new Color(_reader.ReadInt32(), _reader.ReadInt32(), _reader.ReadInt32())}");
         _memoryStream.Position = 0;
 
         int code = _reader.ReadInt32();
@@ -145,7 +155,9 @@ public class Client : IDisposable
             case 0:
                 _self.ID = _reader.ReadInt32();      
                 ReceiveSelf();
-                ReceiveOtherPlayers();
+                //ReceiveOtherPlayers();
+                IsConnected = true;
+                OnConnect?.Invoke();
                 break;
             case 1:
                 int id = _reader.ReadInt32();
@@ -192,7 +204,7 @@ public class Client : IDisposable
         OnPositionChanged?.Invoke(_self);
     }
 
-    private void ReceiveOtherPlayers()
+    /*private void ReceiveOtherPlayers()
     {
         int playerCount = _reader.ReadInt32();
         Others = new List<PlayerData>();
@@ -211,12 +223,11 @@ public class Client : IDisposable
             Others.Add(other);
         }
 
-        OnGetOtherCharacters?.Invoke(Others);
-    }
+        OnGetOtherCharacter?.Invoke(Others);
+    }*/
 
     private void OtherPlayerConnected()
     {
-        var others = new List<PlayerData>();
         var otherPlayer = new PlayerData();
         otherPlayer.ID = _reader.ReadInt32();
         otherPlayer.X = _reader.ReadInt32();
@@ -225,8 +236,8 @@ public class Client : IDisposable
         otherPlayer.Color.Item1 = _reader.ReadInt32();
         otherPlayer.Color.Item2 = _reader.ReadInt32();
         otherPlayer.Color.Item3 = _reader.ReadInt32();
-        others.Add(otherPlayer);
-        OnGetOtherCharacters?.Invoke(others);
+
+        OnGetOtherCharacter?.Invoke(otherPlayer);
     }
 
     public void Dispose()

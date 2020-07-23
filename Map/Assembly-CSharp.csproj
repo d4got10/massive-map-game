@@ -68,6 +68,7 @@
     <Compile Include="Assets\ClearPlayerPrefs.cs" />
     <Compile Include="Assets\Client.cs" />
     <Compile Include="Assets\CloseApp.cs" />
+    <Compile Include="Assets\ConnectingCanvas.cs" />
     <Compile Include="Assets\GameGrid.cs" />
     <Compile Include="Assets\OtherPlayer.cs" />
     <Compile Include="Assets\Player.cs" />

@@ -24,6 +24,7 @@ public class Player : MonoBehaviour, IGridCell
 
     public void Begin(string ip)
     {
+        gameObject.SetActive(true);
         _gameGrid.AddPlayer(this, transform.position);
 
         _client = new Client(ip, 904, this);

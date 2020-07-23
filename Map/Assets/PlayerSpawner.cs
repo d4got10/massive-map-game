@@ -13,13 +13,13 @@ public class PlayerSpawner : MonoBehaviour
     {
         Others = new List<OtherPlayer>();
         OthersToSpawn = new List<Client.PlayerData>();
-        Client.OnGetOtherCharacters += QueueOthers;
+        Client.OnGetOtherCharacter += QueueOther;
         Client.OnOtherPlayerMoved += MoveOtherPlayer;
     }
 
     private void OnDestroy()
     {
-        Client.OnGetOtherCharacters -= QueueOthers;
+        Client.OnGetOtherCharacter -= QueueOther;
         Client.OnOtherPlayerMoved -= MoveOtherPlayer;
     }
 
@@ -45,27 +45,27 @@ public class PlayerSpawner : MonoBehaviour
 
     public void SpawnOthers()
     {
-        foreach (var other in OthersToSpawn)
-        {
-            var obj = Instantiate(_prefab, new Vector2(other.X, other.Y), Quaternion.identity, transform);
-            var otherPlayer = obj.GetComponent<OtherPlayer>();
+        var other = OthersToSpawn[0];
+        OthersToSpawn.RemoveAt(0);
 
-            otherPlayer.ID = other.ID;
-            otherPlayer.X = other.X;
-            otherPlayer.Y = other.Y;
-            otherPlayer.Name = other.Name;
-            otherPlayer.Color = new Color(other.Color.Item1/256f, other.Color.Item2/256f, other.Color.Item3/256f);
+        var obj = Instantiate(_prefab, new Vector2(other.X, other.Y), Quaternion.identity, transform);
+        obj.name = Others.Count.ToString();
+        var otherPlayer = obj.GetComponent<OtherPlayer>();
 
-            otherPlayer.PositionUpdate = true;
-            otherPlayer.Setup = true;
+        otherPlayer.ID = other.ID;
+        otherPlayer.X = other.X;
+        otherPlayer.Y = other.Y;
+        otherPlayer.Name = other.Name;
+        otherPlayer.Color = new Color(other.Color.Item1/256f, other.Color.Item2/256f, other.Color.Item3/256f);
 
-            Others.Add(otherPlayer);
-        }
-        OthersToSpawn = new List<Client.PlayerData>();
+        otherPlayer.PositionUpdate = true;
+        otherPlayer.Setup = true;
+
+        Others.Add(otherPlayer);  
     }
 
-    public void QueueOthers(List<Client.PlayerData> others)
+    public void QueueOther(Client.PlayerData other)
     {
-        OthersToSpawn = others;
+        OthersToSpawn.Add(other);
     }
 }

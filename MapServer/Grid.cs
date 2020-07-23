@@ -49,8 +49,8 @@ namespace MapServer
 
             public (int, int) GetEmptyCell()
             {
-                int x = 0;
-                int y = 0;
+                int x = random.Next(-Size / 2, Size / 2 + 1); ;
+                int y = random.Next(-Size / 2, Size / 2 + 1); ;
 
                 while (!(PlayerCanMove((x, y))))
                 {
